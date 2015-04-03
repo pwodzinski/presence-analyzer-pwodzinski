@@ -15,7 +15,8 @@ from presence_analyzer.utils import (
     get_data,
     mean,
     group_by_weekday,
-    group_by_start_end
+    group_by_start_end,
+    parse_xml
 )
 
 mako = MakoTemplates(app)
@@ -59,6 +60,33 @@ def users_view():
         {'user_id': i, 'name': 'User {0}'.format(str(i))}
         for i in data.keys()
     ]
+
+
+@app.route('/api/v2/users', methods=['GET'])
+@jsonify
+def users_view2():
+    """
+    Users listing for dropdown.
+    """
+    data = parse_xml()
+    return [
+        {'user_id': i, 'name': data[i]['name'], 'avatar': data[i]['avatar']}
+        for i in data.keys()
+    ]
+
+
+@app.route('/api/v2/presence/<int:user_id>', methods=['GET'])
+@jsonify
+def user_avatar(user_id):
+    """
+    Returns total presence time of given user grouped by weekday.
+    """
+    data = parse_xml()
+    if user_id not in data:
+        log.debug('User %s not found!', user_id)
+        abort(404)
+
+    return data[user_id]['avatar']
 
 
 @app.route('/api/v1/mean_time_weekday/<int:user_id>', methods=['GET'])

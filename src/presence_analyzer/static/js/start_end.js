@@ -3,7 +3,7 @@ google.load("visualization", "1", {packages:["corechart", "timeline"], 'language
 (function($) {
     $(document).ready(function() {
         var loading = $('#loading');
-        $.getJSON("/api/v1/users", function(result) {
+        $.getJSON("/api/v2/users", function(result) {
             var dropdown = $("#user_id");
             $.each(result, function(item) {
                 dropdown.append($("<option />").val(this.user_id).text(this.name));
@@ -17,6 +17,10 @@ google.load("visualization", "1", {packages:["corechart", "timeline"], 'language
             if(selected_user) {
                 loading.show();
                 chart_div.hide();
+                $.getJSON("/api/v2/presence/"+selected_user, function(result) {
+                    userPhoto = $("#userPhoto").attr("src", result)
+                    userPhoto.show();
+                });
                 $.getJSON("/api/v1/mean_time_start_end/"+selected_user, function(result) {
                     $.each(result, function(index, value) {
                         value[1] = parseInterval(value[1]);

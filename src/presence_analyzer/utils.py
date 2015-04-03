@@ -4,9 +4,11 @@ Helper functions used in views.
 """
 
 import csv
+import urllib
 from json import dumps
 from functools import wraps
 from datetime import datetime
+from lxml import etree
 
 from flask import Response
 
@@ -14,7 +16,7 @@ from presence_analyzer.main import app
 
 import logging
 log = logging.getLogger(__name__)  # pylint: disable=invalid-name
-
+url = 'http://sargo.bolt.stxnext.pl/users.xml'
 
 def jsonify(function):
     """
@@ -31,6 +33,9 @@ def jsonify(function):
         )
     return inner
 
+def update_xml():
+    urllib.urlretrieve(url, "code.xml")
+    pass
 
 def get_data():
     """
@@ -67,6 +72,27 @@ def get_data():
                 log.debug('Problem with line %d: ', i, exc_info=True)
 
             data.setdefault(user_id, {})[date] = {'start': start, 'end': end}
+
+    return data
+
+
+def parse_xml():
+    """
+    Extracs users' name and avatar from given xml document
+    """
+    data = {}
+    with open(app.config['DATA_XML'], 'r') as xmlfile:
+        tree = etree.parse(xmlfile)
+        root = tree.getroot()
+        host = root.findtext('./server/host')
+        port = root.findtext('./server/port')
+        protocol = root.findtext('./server/protocol')
+        serv = ('{}://{}:{}'.format(protocol, host, port))
+
+        for user in root.findall('./users/user'):
+            avatar = serv + user.find(u'avatar').text
+            name = user.find(u'name').text
+            data[int(user.get(u'id'))] = {'name': name, 'avatar': avatar}
 
     return data
 
